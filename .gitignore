@@ -1,0 +1,11 @@
+*.exe
+Dump_files
+*.o
+*.obj
+*.out
+*.dot
+*.png
+*.pdf
+*.aux
+*.log
+.vscode/
