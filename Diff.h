@@ -19,6 +19,24 @@
 
 //--------------------------------------------------------- DSL ------------------------------------------------------
 
+#define _NUM(val) NewNum(val, NULL, NULL)
+#define _0 NewNum(0, NULL, NULL)
+#define _1 NewNum(1, NULL, NULL)
+
+#define _VAR(index) NewVar(index, NULL, NULL)
+
+#define _ADD(L, R) NewOp(ADD, L, R)
+#define _SUB(L, R) NewOp(SUB, L, R)
+#define _MUL(L, R) NewOp(MUL, L, R)
+#define _DIV(L, R) NewOp(DIV, L, R)
+
+
+
+
+
+
+
+
 
 
 //------------------------------------------------ ENUM/STRUCT/CONST/GLOBAL -----------------------------------
@@ -106,9 +124,12 @@ errors AddVar(VarTable* table, const char* name, size_t* index);
 
 Node_t* NewNode(un_val value, Node_t* left, Node_t* right);
 
-Node_t* NewNum(double num);
+Node_t* NewNum(double num, Node_t* left, Node_t* right);
 
-Node_t* NewOp(op_type op);
+Node_t* NewOp(op_type op, Node_t* left, Node_t* right);
 
-Node_t* NewVar(ssize_t index);
+Node_t* NewVar(ssize_t index, Node_t* left, Node_t* right);
 
+errors DeleteNode(Node_t* node);
+
+errors DestroyBranch(Node_t* node);

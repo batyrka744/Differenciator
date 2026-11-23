@@ -80,24 +80,22 @@ Node_t* NewNode(un_val value, Node_t* left, Node_t* right) {
     switch(value.type) {
 
         case OP:
-            NewOp(value.op);
+            NewOp(value.op, left, right);
             break;
 
         case VAR:
-            NewVar(value.index);
+            NewVar(value.index, left, right);
             break;
 
         case NUM:
-            NewNum(value.num);
+            NewNum(value.num, left, right);
             break;
     }
 
-    node->left_son = left;
-    node->right_son = right;
     return node;
 }
 
-Node_t* NewNum(double num) {
+Node_t* NewNum(double num, Node_t* left, Node_t* right) {
 
     Node_t* node = (Node_t*)calloc(1, sizeof(Node_t));
     my_assert(node, NULL);
@@ -106,10 +104,13 @@ Node_t* NewNum(double num) {
     node->val.op = NO_OP;
     node->val.index = -1;
 
+    node->left_son = left;
+    node->right_son = right;
+
     return node;
 }
 
-Node_t* NewVar(ssize_t index) {
+Node_t* NewVar(ssize_t index, Node_t* left, Node_t* right) {
     Node_t* node = (Node_t*)calloc(1, sizeof(Node_t));
     my_assert(node, NULL);
     
@@ -117,10 +118,13 @@ Node_t* NewVar(ssize_t index) {
     node->val.op = NO_OP;
     node->val.index = index;
 
+    node->left_son = left;
+    node->right_son = right;
+
     return node;
 }
 
-Node_t* NewOp(op_type op) {
+Node_t* NewOp(op_type op, Node_t* left, Node_t* right) {
     Node_t* node = (Node_t*)calloc(1, sizeof(Node_t));
     my_assert(node, NULL);
     
@@ -128,5 +132,50 @@ Node_t* NewOp(op_type op) {
     node->val.op = op;
     node->val.index = -1;
 
+    node->left_son = left;
+    node->right_son = right;
+
     return node;
+}
+
+errors DeleteNode(Node_t* node) {
+    my_assert(node, ERR_NULL_PTR);
+
+    if (node->parent != NULL) {
+        if (node->parent->left_son == node) node->parent->left_son = NULL;
+        if (node->parent->right_son == node) node->parent->right_son = NULL;
+    }
+        
+    if (node->left_son != NULL) 
+        node->left_son->parent = NULL;
+    
+    if (node->right_son != NULL) 
+        node->right_son->parent = NULL;
+
+
+    node->val.index = -1;
+    node->val.num = NAN;
+    node->val.op = NO_OP;
+
+    node->left_son = NULL;
+    node->right_son = NULL;
+    node->parent = NULL;
+
+    free(node);
+
+    return ERR_OK;
+}
+
+errors DestroyBranch(Node_t* node) {
+    my_assert(node != NULL,);
+
+    errors err = ERR_OK;
+    if (node->left_son != NULL)
+        err = DestroyBranch(node->left_son);
+    if (node->right_son != NULL)
+        err = DestroyBranch(node->right_son);
+
+    err = DeleteNode(node);
+
+    return err;
 }
