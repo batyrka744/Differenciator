@@ -179,3 +179,63 @@ errors DestroyBranch(Node_t* node) {
 
     return err;
 }
+
+//-------------------------------------------------------- VERIFY --------------------------------------------
+
+errors NodeVerify(const Node_t* node, const VarTable* vars, size_t* visited) {
+    if (node == NULL) 
+        return ERR_OK;
+
+    if (visited != NULL) {
+        (*visited)++;
+        if (*visited > MAX_TREE_NODES)
+            return ERR_TREE_CYCLE;
+    }
+
+    switch(node->val.type) {
+
+        case NUM:
+            if (node->left_son || node->right_son)
+                return ERR_INVALID_CHILDREN;
+            break;
+
+        case VAR:
+            if (node->left_son || node->right_son)
+                return ERR_INVALID_CHILDREN;
+            if (!vars || node->val.index >= vars->size) {
+                return ERR_BAD_VAR_IDX;
+            }
+            break;
+
+        case OP:
+            if (!node->left_son && !node->right_son)
+                return ERR_INVALID_CHILDREN;
+            break;
+
+        default:
+            return ERR_UNKNOWN_NODE_TYPE;
+    }
+    errors err_left = NodeVerify(node->left_son, vars, visited);
+
+    if (err_left != ERR_OK) 
+        return err_left;
+
+    return NodeVerify(node->right_son, vars, visited);
+}
+
+errors TreeVerify(const Node_t* root, const VarTable* vars) {
+    if (!root)
+        return ERR_OK;
+
+    size_t visited = 0;
+    return NodeVerify(root, vars, &visited);
+}
+
+void DiffDump(const Node_t* root, const VarTable* vars, errors err_code, const char* file, int line, const char* func) {
+    FILE* log_file = fopen(LOG_FILE, "w");
+    my_assert(log_file,);
+    
+    //здесь будет вызов графического и теховского дампа
+
+    fclose(log_file);
+}

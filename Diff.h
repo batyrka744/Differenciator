@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-// #include <assert.h>
+#include <assert.h>
 // #include <ctype.h>
 #include <string.h>
 
@@ -15,6 +15,24 @@
 
 #define READ_FILE "for_read.txt"
 #define NUM_OF_VARS 3
+#define MAX_TREE_NODES 1000
+
+#ifdef DIFF_DEBUG
+#define ON_DEBUG(...) __VA_ARGS__
+#else
+#define ON_DEBUG(...)
+#endif
+
+
+#define ASSERT_OK(root, vars) \
+ON_DEBUG(\
+    do {\
+    errors err = TreeVerify(root, vars);\
+    if (err != ERR_OK) {\
+        DiffDump(root, vars, err, __FILE__, __LINE__, __func__);\
+        assert(0);}\
+    } while(0)\
+)
 
 
 //--------------------------------------------------------- DSL ------------------------------------------------------
@@ -30,18 +48,20 @@
 #define _MUL(L, R) NewOp(MUL, L, R)
 #define _DIV(L, R) NewOp(DIV, L, R)
 
-
-
-
-
-
-
-
-
+#define LOG_FILE "Dump_files//log.txt"
 
 //------------------------------------------------ ENUM/STRUCT/CONST/GLOBAL -----------------------------------
 
-enum errors {ERR_OK = 0, ERR_NULL_PTR = 1, ERR_NO_MEMORY = 2};
+enum errors {
+    ERR_OK = 0, 
+    ERR_NULL_PTR = 1, 
+    ERR_NO_MEMORY = 2, 
+    ERR_TREE_CYCLE = 3, 
+    ERR_INVALID_CHILDREN = 4,
+    ERR_BAD_VAR_IDX = 5,
+    ERR_UNKNOWN_NODE_TYPE = 6
+};
+
 
 enum node_type {NUM = 1, VAR = 2, OP = 3};
 
@@ -133,3 +153,7 @@ Node_t* NewVar(ssize_t index, Node_t* left, Node_t* right);
 errors DeleteNode(Node_t* node);
 
 errors DestroyBranch(Node_t* node);
+
+errors NodeVerify(const Node_t* node, const VarTable* vars, size_t* visited);
+
+errors TreeVerify(const Node_t* root, const VarTable* vars);
