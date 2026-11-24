@@ -8,7 +8,6 @@
 #include <math.h>
 #include <stdlib.h>
 #include <assert.h>
-// #include <ctype.h>
 #include <string.h>
 
 //------------------------------------------------------ MACROSES -----------------------------------------------
@@ -36,13 +35,13 @@ ON_DEBUG(\
 )
 
 
-//----------------- DSL -------------
+//-------------------- DSL -------------------
 
-#define _NUM(val) NewNum(val, NULL, NULL)
-#define _0 NewNum(0, NULL, NULL)
-#define _1 NewNum(1, NULL, NULL)
+#define _NUM(val) NewNum(val)
+#define _0 NewNum(0)
+#define _1 NewNum(1)
 
-#define _VAR(index) NewVar(index, NULL, NULL)
+#define _VAR(name, vars) NewVar(name, vars)
 
 #define _ADD(L, R) NewOp(ADD, L, R)
 #define _SUB(L, R) NewOp(SUB, L, R)
@@ -190,15 +189,15 @@ errors VarTableInit(VarTable* table, size_t capacity);
 
 errors VarTableDtor(VarTable* table);
 
-errors AddVar(VarTable* table, const char* name, size_t* index);
+errors AddVar(VarTable* table, const char* name, ssize_t* index);
 
 Node_t* NewNode(un_val value, Node_t* left, Node_t* right);
 
-Node_t* NewNum(double num, Node_t* left, Node_t* right);
+Node_t* NewNum(double num);
 
 Node_t* NewOp(op_type op, Node_t* left, Node_t* right);
 
-Node_t* NewVar(ssize_t index, Node_t* left, Node_t* right);
+Node_t* NewVar(const char* name, VarTable* vars);
 
 errors DeleteNode(Node_t* node);
 

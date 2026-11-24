@@ -1,14 +1,26 @@
-#include "Diff.h"
+#include "Diff_dump.h"
 
 int main() {
 
     FILE* file_read = fopen(READ_FILE, "r");
     my_assert(file_read, -1);
 
+    VarTable vars = {0};
+    VarTableInit(&vars, 10);
+
+    Node_t* node1 = _NUM(2);
+    Node_t* node2 = _VAR("x", &vars);
+    Node_t* node3 = _NUM(5);
+    Node_t* node4 = _VAR("y", &vars);
+
+    Node_t* node = _MUL(_ADD(node1, node2), _SUB(node3, node4));
 
 
 
+    DiffDump_file(node, &vars, ERR_OK, LOG_GRAPH, __LINE__, __func__);
 
+    DestroyBranch(node);
+    VarTableDtor(&vars);
     fclose(file_read);
     return 0;
 }
@@ -37,7 +49,7 @@ errors VarTableDtor(VarTable* table) {
     return ERR_OK;
 }
 
-errors AddVar(VarTable* table, const char* name, size_t* index) {
+errors AddVar(VarTable* table, const char* name, ssize_t* index) {
     my_assert(table, ERR_NULL_PTR);
     my_assert(name, ERR_NULL_PTR);
     my_assert(index, ERR_NULL_PTR);
@@ -108,67 +120,76 @@ Node_t* NewNode(un_val value, Node_t* left, Node_t* right) {
     //некоторые узлы могут быть без сыновей, поэтому нет ассертов
     //лучше скидывай свою почту и пароль, Артёмчик, будем открывать с тобой кейсики
 
-    Node_t* node = NULL;
+    Node_t* node = (Node_t*)calloc(1, sizeof(Node_t));
+    my_assert(node, NULL);
 
     switch(value.type) {
 
         case OP:
-            NewOp(value.op, left, right);
+            node->val.num = NAN;
+            node->val.op = value.op;
+            node->val.index = -1;
+            node->val.type = OP;
             break;
 
         case VAR:
-            NewVar(value.index, left, right);
+            node->val.num = NAN;
+            node->val.op = NO_OP;
+            node->val.index = value.index;
+            node->val.type = VAR;
             break;
 
         case NUM:
-            NewNum(value.num, left, right);
+            node->val.num = value.num;
+            node->val.op = NO_OP;
+            node->val.index = -1;
+            node->val.type = NUM;
             break;
+    }
+    node->left_son = left;
+    node->right_son = right;
+
+    if(node->left_son) {
+        node->left_son->parent = node;
+    }
+    if(node->right_son) {
+        node->right_son->parent = node;
     }
 
     return node;
 }
 
-Node_t* NewNum(double num, Node_t* left, Node_t* right) {
+Node_t* NewNum(double num) {
 
-    Node_t* node = (Node_t*)calloc(1, sizeof(Node_t));
-    my_assert(node, NULL);
-    
-    node->val.num = num;
-    node->val.op = NO_OP;
-    node->val.index = -1;
+    un_val value = {};
+    value.type = NUM;
+    value.num = num;
 
-    node->left_son = left;
-    node->right_son = right;
-
-    return node;
+    return NewNode(value, NULL, NULL);
 }
 
-Node_t* NewVar(ssize_t index, Node_t* left, Node_t* right) {
-    Node_t* node = (Node_t*)calloc(1, sizeof(Node_t));
-    my_assert(node, NULL);
+
+Node_t* NewVar(const char* name, VarTable* vars) {
+    my_assert(name, NULL);
+    my_assert(vars, NULL);
+
+    un_val value = {};
+    value.type = VAR;
+
+    size_t index = 0;
+    errors err = AddVar(vars, name, &value.index);
     
-    node->val.num = NAN;
-    node->val.op = NO_OP;
-    node->val.index = index;
-
-    node->left_son = left;
-    node->right_son = right;
-
-    return node;
+    return NewNode(value, NULL, NULL);
 }
+
 
 Node_t* NewOp(op_type op, Node_t* left, Node_t* right) {
-    Node_t* node = (Node_t*)calloc(1, sizeof(Node_t));
-    my_assert(node, NULL);
-    
-    node->val.num = NAN;
-    node->val.op = op;
-    node->val.index = -1;
 
-    node->left_son = left;
-    node->right_son = right;
+    un_val value = {};
+    value.type = OP;
+    value.op = op;
 
-    return node;
+    return NewNode(value, left, right);
 }
 
 errors DeleteNode(Node_t* node) {

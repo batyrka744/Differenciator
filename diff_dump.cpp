@@ -1,5 +1,5 @@
 #include "Diff_dump.h"
-
+#define FULL_DUMP
 
 void DiffDumpGraph(Node_t* root, VarTable* vars, const char* reason) {
     my_assert(root != NULL,);
@@ -28,7 +28,7 @@ void DiffDumpGraph(Node_t* root, VarTable* vars, const char* reason) {
     fclose(file);
 
 
-    system("dot -Tpng dump.dot -o dump.png");
+    system("dot -Tpng Dump_files\\graph_dump.dot -o Dump_files\\graph.png");
 }
 
 
@@ -39,29 +39,74 @@ void RecOutput(Node_t* node, VarTable* vars, FILE* file) {
     
     switch(node->val.type) {
         case NUM:
-            fprintf(file, "\tnode%p [label=\" %lg\"];\n", node, node->val.num);
+#ifdef FULL_DUMP
+            fprintf(file, "\tnode%p [shape=Mrecord, label=\"{ node: %p | parent: %p | NUM | %lg | { <l> L: %p | <r> R: %p } }\"];\n",
+                    node, node, node->parent, node->val.num, node->left_son, node->right_son);
+#else
+            fprintf(file, "\tnode%p [shape=circle, label=\" %lg\"];\n", node, node->val.num);
+#endif
             break;
 
         case VAR:
-            fprintf(file, "\tnode%p [label=\" %s\"];\n", node, vars->names[node->val.index]);
+#ifdef FULL_DUMP
+            fprintf(file, "\tnode%p [shape=Mrecord, fillcolor=\"#FFFF00\", label=\"{ node: %p | parent: %p | VAR [%zd] | %s | { <l> L: %p | <r> R: %p } }\"];\n",
+                    node, node, node->parent, node->val.index, vars->names[node->val.index], node->left_son, node->right_son);
+#else
+            fprintf(file, "\tnode%p [shape=square, fillcolor = \"#FFFF00\", label=\" %s\"];\n", node, vars->names[node->val.index]);
+#endif
             break;
 
-        case OP:
-            fprintf(file, "\tnode%p [label=\" %s\"];\n", node, OP_TABLE[(node->val.op)].name);
+        case OP: {
+            char color[256] = "";
+            switch(node->val.op) {
+                case ADD:
+                    strcpy(color, "#90EE90");
+                    break;
+                case SUB:
+                    strcpy(color, "#87CEFA");
+                    break;
+                case MUL:
+                    strcpy(color, "#FFA500");
+                    break;
+                case DIV:
+                    strcpy(color, "#0000FF");
+                    break;  
+                default:
+                    strcpy(color, "#4B0082");
+                    break;
+            }
+#ifdef FULL_DUMP
+            fprintf(file, "\tnode%p [shape=Mrecord, fillcolor=\"%s\", label=\"{ node: %p | parent: %p | OP [%d] | %s | { <l> L: %p | <r> R: %p } }\"];\n",
+                    node, color, node, node->parent, node->val.op, OP_TABLE[(node->val.op)].name, node->left_son, node->right_son);
+#else
+            fprintf(file, "\tnode%p [shape=invtriangle, fillcolor=\"%s\", label=\" %s\"];\n", node, color, OP_TABLE[(node->val.op)].name);
+#endif
             break;
-
+        }
         default:
+#ifdef FULL_DUMP
+            fprintf(file, "\tnode%p [shape=Mrecord, fillcolor=\"#D3D3D3\", label=\"{ node: %p | parent: %p | UNKNOWN [%d] | num: %lg | idx: %zd | op: %d | { <l> L: %p | <r> R: %p } }\"];\n",
+                    node, node, node->parent, node->val.type, node->val.num, node->val.index, node->val.op, node->left_son, node->right_son);
+#else
             fprintf(file, "\tnode%p [fillcolor=\"#D3D3D3\", label=\"unknown value_type: %d\"];\n", node, node->val.type);
+#endif
             break;
     }
 
-
     if (node->left_son != NULL) {
+#ifdef FULL_DUMP
+        fprintf(file, "\tnode%p:l -> node%p [color=\"#B22222\"];\n", node, node->left_son);
+#else
         fprintf(file, "\tnode%p -> node%p [color=\"#B22222\"];\n", node, node->left_son);
+#endif
         RecOutput(node->left_son, vars, file);
     }     
     if (node->right_son != NULL) {
+#ifdef FULL_DUMP
+        fprintf(file, "\tnode%p:r -> node%p [color=\"#2E8B57\"];\n", node, node->right_son);
+#else
         fprintf(file, "\tnode%p -> node%p [color=\"#2E8B57\"];\n", node, node->right_son);
+#endif
         RecOutput(node->right_son, vars, file);
     }
 }
@@ -84,6 +129,7 @@ void DiffDump_file(Node_t* node, VarTable* vars, errors err_code, const char* fi
     for (size_t i = 0; i < vars->size; i++) {
         fprintf(log_file, "\tvar%d: %p - \"%s\"\n", i, vars->names[i], vars->names[i]);
     }         
+    fprintf(log_file, "}\n");
 
     fprintf(log_file, "\nCurrent node: [%p]\n", (void*)node);
     fprintf(log_file, "========================================\n");
