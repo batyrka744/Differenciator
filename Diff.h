@@ -16,6 +16,7 @@
 #define READ_FILE "for_read.txt"
 #define NUM_OF_VARS 3
 #define MAX_TREE_NODES 1000
+#define NOT_FOUNDED -1
 
 #ifdef DIFF_DEBUG
 #define ON_DEBUG(...) __VA_ARGS__
@@ -29,13 +30,13 @@ ON_DEBUG(\
     do {\
     errors err = TreeVerify(root, vars);\
     if (err != ERR_OK) {\
-        DiffDump(root, vars, err, __FILE__, __LINE__, __func__);\
+        DiffDump_file(root, vars, err, __FILE__, __LINE__, __func__);\
         assert(0);}\
     } while(0)\
 )
 
 
-//--------------------------------------------------------- DSL ------------------------------------------------------
+//----------------- DSL -------------
 
 #define _NUM(val) NewNum(val, NULL, NULL)
 #define _0 NewNum(0, NULL, NULL)
@@ -49,6 +50,7 @@ ON_DEBUG(\
 #define _DIV(L, R) NewOp(DIV, L, R)
 
 #define LOG_FILE "Dump_files\\log.txt"
+#define LOG_GRAPH "Dump_files\\graph_log.html"
 
 //------------------------------------------------ ENUM/STRUCT/CONST/GLOBAL -----------------------------------
 
@@ -207,3 +209,7 @@ errors NodeVerify(const Node_t* node, const VarTable* vars, size_t* visited);
 errors TreeVerify(const Node_t* root, const VarTable* vars);
 
 const char* ErrCode(errors err);
+
+ssize_t find_op_by_type(op_type type);
+
+ssize_t find_op_by_name(const char* name);

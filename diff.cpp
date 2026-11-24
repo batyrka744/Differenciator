@@ -69,6 +69,39 @@ errors AddVar(VarTable* table, const char* name, size_t* index) {
     return ERR_OK;
 }
 
+
+/**
+ * @brief finds op in the table by it's number
+ * 
+ * @param[in] type number of op in enum op_type
+ * @return ssize_t index in OP_TABLE, -1 if not_founded
+ */
+ssize_t find_op_by_type(op_type type) {
+    size_t size = sizeof(OP_TABLE) / sizeof(OP_TABLE[0]);
+    for (size_t i = 0; i < size; i++) {
+        if (type == OP_TABLE[i].type)
+            return i;
+    }
+    return NOT_FOUNDED;
+}
+
+/**
+ * @brief finds op in the table by it's name 
+ * 
+ * @param[in] name name of op 
+ * @return ssize_t index in OP_TABLE, -1 if not_founded
+ */
+ssize_t find_op_by_name(const char* name) {
+    my_assert(name, NOT_FOUNDED);
+
+    size_t size = sizeof(OP_TABLE) / sizeof(OP_TABLE[0]);
+    for (size_t i = 0; i < size; i++) {
+        if (strcmp(name, OP_TABLE[i].name) == 0)
+            return i;
+    }
+    return NOT_FOUNDED;
+}
+
 //-------------------------------------------------- NODE FUNCTIONS ------------------------------------------
 
 Node_t* NewNode(un_val value, Node_t* left, Node_t* right) {
@@ -231,56 +264,3 @@ errors TreeVerify(const Node_t* root, const VarTable* vars) {
     return NodeVerify(root, vars, &visited);
 }
 
-void DiffDump(const Node_t* root, const VarTable* vars, errors err_code, const char* file, int line, const char* func) {
-    FILE* log_file = fopen(LOG_FILE, "w");
-    my_assert(log_file,);
-    
-    for (size_t i = 0; i < 19; i++) fprintf(log_file, "=");
-    fprintf(log_file, " DIFF DUMP ");
-    for (size_t i = 0; i < 19; i++) fprintf(log_file, "=");
-
-
-    fprintf(log_file, "\nError code: %d (%s)\n", err_code, ErrCode(err_code));
-
-    fprintf(log_file, "Called from: %s() at %s:%d\n", func, file, line);
-
-    #ifdef DIFF_DEBUG
-    fprintf(log_file, "\nstack_t \"%s\"[%p] Created at %s:%d\n", stk->name, stk, stk->file, stk->line);
-    #endif
-    fprintf(log_file, "capacity = %d\n", vars->capacity);
-    fprintf(log_file, "size = %d\n", vars->size);
-    fprintf(log_file, "vars [%p]\n{\n", vars->names);
-    for (size_t i = 0; i < vars->size; i++) {
-        fprintf(log_file, "\tvar%d: %p - \"%s\"\n", i, vars->names[i], vars->names[i]);
-    }         
-    
-    
-
-    for (size_t i = 0; i < 50; i++) fprintf(log_file, "=");
-    fprintf(log_file, "\n");
-    //здесь будет вызов графического и теховского дампа
-
-    fclose(log_file);
-}
-
-const char* ErrCode(errors err) {
-    switch(err) {
-        case ERR_OK:
-            return "ERR_OK";
-        case ERR_NULL_PTR:
-            return "ERR_NULL_PTR";
-        case ERR_NO_MEMORY:
-            return "ERR_NO_MEMORY";
-        case ERR_TREE_CYCLE:
-            return "ERR_TREE_CYCLE";
-        case ERR_BAD_VAR_IDX:
-            return "ERR_BAD_VAR_IDX";
-        case ERR_INVALID_CHILDREN:
-            return "ERR_INVALID_CHILDREN";
-        case ERR_UNKNOWN_NODE_TYPE:
-            return "ERR_UNKNOWN_NODE_TYPE";
-        default:
-            return "UNKNOWN ERROR";
-    }
-    return "SWITCH ERROR ERROR";
-}
