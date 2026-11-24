@@ -167,7 +167,7 @@ errors DeleteNode(Node_t* node) {
 }
 
 errors DestroyBranch(Node_t* node) {
-    my_assert(node != NULL,);
+    my_assert(node != NULL, ERR_NULL_PTR);
 
     errors err = ERR_OK;
     if (node->left_son != NULL)
@@ -180,7 +180,7 @@ errors DestroyBranch(Node_t* node) {
     return err;
 }
 
-//-------------------------------------------------------- VERIFY --------------------------------------------
+//------------------------------------------------- VERIFY --------------------------------------------
 
 errors NodeVerify(const Node_t* node, const VarTable* vars, size_t* visited) {
     if (node == NULL) 
@@ -235,7 +235,52 @@ void DiffDump(const Node_t* root, const VarTable* vars, errors err_code, const c
     FILE* log_file = fopen(LOG_FILE, "w");
     my_assert(log_file,);
     
+    for (size_t i = 0; i < 19; i++) fprintf(log_file, "=");
+    fprintf(log_file, " DIFF DUMP ");
+    for (size_t i = 0; i < 19; i++) fprintf(log_file, "=");
+
+
+    fprintf(log_file, "\nError code: %d (%s)\n", err_code, ErrCode(err_code));
+
+    fprintf(log_file, "Called from: %s() at %s:%d\n", func, file, line);
+
+    #ifdef DIFF_DEBUG
+    fprintf(log_file, "\nstack_t \"%s\"[%p] Created at %s:%d\n", stk->name, stk, stk->file, stk->line);
+    #endif
+    fprintf(log_file, "capacity = %d\n", vars->capacity);
+    fprintf(log_file, "size = %d\n", vars->size);
+    fprintf(log_file, "vars [%p]\n{\n", vars->names);
+    for (size_t i = 0; i < vars->size; i++) {
+        fprintf(log_file, "\tvar%d: %p - \"%s\"\n", i, vars->names[i], vars->names[i]);
+    }         
+    
+    
+
+    for (size_t i = 0; i < 50; i++) fprintf(log_file, "=");
+    fprintf(log_file, "\n");
     //здесь будет вызов графического и теховского дампа
 
     fclose(log_file);
+}
+
+const char* ErrCode(errors err) {
+    switch(err) {
+        case ERR_OK:
+            return "ERR_OK";
+        case ERR_NULL_PTR:
+            return "ERR_NULL_PTR";
+        case ERR_NO_MEMORY:
+            return "ERR_NO_MEMORY";
+        case ERR_TREE_CYCLE:
+            return "ERR_TREE_CYCLE";
+        case ERR_BAD_VAR_IDX:
+            return "ERR_BAD_VAR_IDX";
+        case ERR_INVALID_CHILDREN:
+            return "ERR_INVALID_CHILDREN";
+        case ERR_UNKNOWN_NODE_TYPE:
+            return "ERR_UNKNOWN_NODE_TYPE";
+        default:
+            return "UNKNOWN ERROR";
+    }
+    return "SWITCH ERROR ERROR";
 }

@@ -48,7 +48,7 @@ ON_DEBUG(\
 #define _MUL(L, R) NewOp(MUL, L, R)
 #define _DIV(L, R) NewOp(DIV, L, R)
 
-#define LOG_FILE "Dump_files//log.txt"
+#define LOG_FILE "Dump_files\\log.txt"
 
 //------------------------------------------------ ENUM/STRUCT/CONST/GLOBAL -----------------------------------
 
@@ -64,6 +64,16 @@ enum errors {
 
 
 enum node_type {NUM = 1, VAR = 2, OP = 3};
+
+//---------------- OP TYPE ------------
+
+enum op_priority {
+    PRIO_NONE = 0,
+    PRIO_ADD = 1,
+    PRIO_MUL = 2,
+    PRIO_POW = 3,
+    PRIO_FUNC = 4
+};
 
 enum op_type {
     NO_OP = 0, 
@@ -105,6 +115,47 @@ enum op_type {
     MOD = 28
 };
 
+struct op_info {
+    op_type type;
+    const char* name;
+    const char* tex;
+    op_priority prio;
+};
+
+static const op_info OP_TABLE[] = {
+    {NO_OP,   "",       "",                       PRIO_NONE},
+    {ADD,     "+",      "+",                      PRIO_ADD},
+    {SUB,     "-",      "-",                      PRIO_ADD},
+    {MUL,     "*",      "\\cdot ",                PRIO_MUL},
+    {DIV,     "/",      "\\frac",                 PRIO_MUL},
+    {SQRT,    "sqrt",   "\\sqrt",                 PRIO_FUNC},
+    {POWER,   "^",      "^",                      PRIO_POW},
+    {LN,      "ln",     "\\ln",                   PRIO_FUNC},
+    {LOG,     "log",    "\\log",                  PRIO_FUNC},
+    {FACT,    "fact",   "!",                      PRIO_FUNC},
+    {SGN,     "sgn",    "\\operatorname{sgn}",    PRIO_FUNC},
+    {ABS,     "abs",    "\\left| \\right|",       PRIO_FUNC},
+    {SIN,     "sin",    "\\sin",                  PRIO_FUNC},
+    {COS,     "cos",    "\\cos",                  PRIO_FUNC},
+    {TG,      "tg",     "\\tan",                  PRIO_FUNC},
+    {CTG,     "ctg",    "\\cot",                  PRIO_FUNC},
+    {ARCSIN,  "arcsin", "\\arcsin",               PRIO_FUNC},
+    {ARCCOS,  "arccos", "\\arccos",               PRIO_FUNC},
+    {ARCTG,   "arctg",  "\\arctan",               PRIO_FUNC},
+    {ARCCTG,  "arcctg", "\\operatorname{arccot}", PRIO_FUNC},
+    {SH,      "sh",     "\\sinh",                 PRIO_FUNC},
+    {CH,      "ch",     "\\cosh",                 PRIO_FUNC},
+    {TH,      "th",     "\\tanh",                 PRIO_FUNC},
+    {CTH,     "cth",    "\\coth",                 PRIO_FUNC},
+    {ARCSH,   "arcsh",  "\\operatorname{arsinh}", PRIO_FUNC},
+    {ARCCH,   "arcch",  "\\operatorname{arcosh}", PRIO_FUNC},
+    {ARCTH,   "arcth",  "\\operatorname{artanh}", PRIO_FUNC},
+    {ARCCTH,  "arccth", "\\operatorname{arcoth}", PRIO_FUNC},
+    {MOD,     "mod",    "\\bmod",                 PRIO_MUL}
+};
+
+//---------------------------------
+
 struct un_val {
     node_type type;
 
@@ -127,9 +178,6 @@ struct VarTable {
     size_t size;
     size_t capacity;
 };
-
-
-
 
 
 
@@ -157,3 +205,5 @@ errors DestroyBranch(Node_t* node);
 errors NodeVerify(const Node_t* node, const VarTable* vars, size_t* visited);
 
 errors TreeVerify(const Node_t* root, const VarTable* vars);
+
+const char* ErrCode(errors err);
