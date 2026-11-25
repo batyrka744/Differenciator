@@ -50,6 +50,7 @@ ON_DEBUG(\
 
 #define LOG_FILE "Dump_files\\log.txt"
 #define LOG_GRAPH "Dump_files\\graph_log.html"
+#define TEX_FILE "Dump_files\\tex_dump.tex"
 
 //------------------------------------------------ ENUM/STRUCT/CONST/GLOBAL -----------------------------------
 

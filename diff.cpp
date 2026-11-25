@@ -17,6 +17,7 @@ int main() {
 
 
 
+    TexDumpStart(node, &vars);
     DiffDump_file(node, &vars, ERR_OK, LOG_GRAPH, __LINE__, __func__);
 
     DestroyBranch(node);

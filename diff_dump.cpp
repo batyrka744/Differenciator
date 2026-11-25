@@ -162,3 +162,123 @@ const char* ErrCode(errors err) {
     }
     return "SWITCH ERROR ERROR";
 }
+
+void TexDumpStart(Node_t* root, VarTable* vars) {
+    FILE* file = fopen(TEX_FILE, "w");
+    my_assert(file,);
+
+    fprintf(file, "\\documentclass[a4paper,12pt]{article}\n"
+                    "\\usepackage[utf8]{inputenc}\n"
+                    "\\usepackage[russian]{babel}\n"
+                    "\\usepackage{amsmath}\n\n"
+                    "\\begin{document}\n");
+
+
+    fprintf(file, "\\[ ");
+    TexPrintNode(root, vars, file);
+    fprintf(file, " \\]\n");
+
+
+    fprintf(file, "\\end{document}");
+    fclose(file);
+    system("pdflatex -output-directory=Dump_files Dump_files\\tex_dump.tex");
+}
+
+void TexPrintNode(const Node_t* node, VarTable* vars, FILE* file) {
+    my_assert(vars,);
+    my_assert(file,);
+    if (!node) return;
+
+    switch(node->val.type) {
+        
+        case NUM:
+            fprintf(file, "%lg", node->val.num);
+            break;
+
+        case VAR:
+            fprintf(file, "%s", vars->names[node->val.index]);
+            break;
+
+        case OP: {
+            ssize_t i = find_op_by_type(node->val.op);
+            my_assert(i >= 0,);
+
+            switch(node->val.op) {
+
+                case DIV:
+
+                    fprintf(file, "%s{", OP_TABLE[i].tex);
+                    TexPrintNode(node->left_son, vars, file);
+
+                    fprintf(file, "}{");
+                    TexPrintNode(node->right_son, vars, file);
+                    fprintf(file, "}");
+
+                    break;
+
+
+                case ADD:
+                case SUB:
+                case MUL:
+                    TexPrintChild(node, node->left_son, false, vars, file);
+                    fprintf(file, "%s", OP_TABLE[i].tex);
+                    TexPrintChild(node, node->right_son, true, vars, file);
+
+                    break;
+
+
+                case POWER:
+                    fprintf(file, "{");
+                    TexPrintChild(node, node->left_son, false, vars, file);
+                    fprintf(file, "}^{");
+                    TexPrintChild(node, node->right_son, true, vars, file);
+                    fprintf(file, "}");
+
+                    break;
+
+
+                case SQRT:
+                    fprintf(file, "%s{", OP_TABLE[i].tex);
+                    TexPrintNode(node->left_son, vars, file);
+                    TexPrintNode(node->right_son, vars, file);
+                    fprintf(file, "}");
+
+                    break;
+
+
+                default:
+                    fprintf(file, "%s(", OP_TABLE[i].tex);
+                    TexPrintNode(node->left_son, vars, file);
+                    TexPrintNode(node->right_son, vars, file);
+                    fprintf(file, ")");
+
+                    break;
+            }
+
+            break;
+        }
+            
+    }
+}
+
+bool NeedBrackets(const Node_t* parent, const Node_t* child, bool is_right) {
+    if (!parent || !child) return false;
+    if (parent->val.type != OP || child->val.type != OP) return false;
+    if (parent->val.op == DIV) return false;
+
+    op_priority parent_prio = OP_TABLE[parent->val.op].prio;
+    op_priority child_prio  = OP_TABLE[child->val.op].prio;
+
+    if (child_prio < parent_prio) return true;
+    if (child_prio == parent_prio && is_right && parent->val.op == SUB) return true;
+    if (child_prio == parent_prio && !is_right && parent->val.op == POWER) return true;
+
+    return false;
+}
+
+void TexPrintChild(const Node_t* parent, const Node_t* child, bool is_right, VarTable* vars, FILE* file) {
+    bool brackets = NeedBrackets(parent, child, is_right);
+    if (brackets) fprintf(file, "\\left(");
+    TexPrintNode(child, vars, file);
+    if (brackets) fprintf(file, "\\right)");
+}
