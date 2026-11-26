@@ -54,7 +54,7 @@ ON_DEBUG(\
 #define _CL(diffed) CopyNode(diffed->left_son, NULL)
 #define _CR(diffed) CopyNode(diffed->right_son, NULL)
 
-#define _FUNC(op, node, var_idx) (node->left_son) ? NewOp(op, node->left_son, NULL) : NewOp(op, NULL, node->right_son)
+#define _FUNC(op, node, var_idx) ((node->left_son) ? (NewOp(op, _CL(node), NULL)) : (NewOp(op, NULL, _CR(node))))
 
 #define LOG_FILE "Dump_files\\log.txt"
 #define LOG_GRAPH "Dump_files\\graph_log.html"
@@ -222,6 +222,12 @@ ssize_t find_op_by_type(op_type type);
 
 ssize_t find_op_by_name(const char* name);
 
-Node_t* CopyNode(Node_t* ctrl_c, Node_t* parent);
+Node_t* CopyNode(const Node_t* ctrl_c, Node_t* parent);
 
 bool is_var_in_branch(const Node_t* node, ssize_t var_idx);
+
+Node_t* Diff(const Node_t* dNode, ssize_t var_idx);
+
+Node_t* FuncDiff(const Node_t* dNode, Node_t* derivative, ssize_t var_idx);
+
+Node_t* PowerDiff(const Node_t* dNode, ssize_t var_idx);

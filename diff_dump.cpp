@@ -181,7 +181,7 @@ void TexDumpStart(Node_t* root, VarTable* vars) {
 
     fprintf(file, "\\end{document}");
     fclose(file);
-    system("pdflatex -output-directory=Dump_files Dump_files\\tex_dump.tex");
+    system("pdflatex -quiet -output-directory=Dump_files Dump_files\\tex_dump.tex");
 }
 
 void TexPrintNode(const Node_t* node, VarTable* vars, FILE* file) {

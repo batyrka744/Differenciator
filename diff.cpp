@@ -8,19 +8,18 @@ int main() {
     VarTable vars = {0};
     VarTableInit(&vars, 10);
 
-    Node_t* node1 = _NUM(2);
-    Node_t* node2 = _VAR("x", &vars);
-    Node_t* node3 = _NUM(5);
-    Node_t* node4 = _VAR("y", &vars);
-
-    Node_t* node = _MUL(_ADD(node1, node2), _SUB(node3, node4));
-
+    Node_t* node = NewOp(POWER, _VAR("x", &vars), _VAR("x", &vars));
 
 
     TexDumpStart(node, &vars);
     DiffDump_file(node, &vars, ERR_OK, LOG_GRAPH, __LINE__, __func__);
 
+    Node_t* diff_node = Diff(node, 0);
+    TexDumpStart(diff_node, &vars);
+
+    DestroyBranch(diff_node);
     DestroyBranch(node);
+
     VarTableDtor(&vars);
     fclose(file_read);
     return 0;
