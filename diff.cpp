@@ -9,7 +9,7 @@ int main() {
     VarTableInit(&vars, 10);
 
     Node_t* node = NewOp(POWER, _VAR("x", &vars), _VAR("x", &vars));
-
+    
 
     TexDumpStart(node, &vars);
     DiffDump_file(node, &vars, ERR_OK, LOG_GRAPH, __LINE__, __func__);
