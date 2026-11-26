@@ -282,3 +282,4 @@ void TexPrintChild(const Node_t* parent, const Node_t* child, bool is_right, Var
     TexPrintNode(child, vars, file);
     if (brackets) fprintf(file, "\\right)");
 }
+

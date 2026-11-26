@@ -43,6 +43,9 @@ errors VarTableInit(VarTable* table, size_t capacity) {
 errors VarTableDtor(VarTable* table) {
     my_assert(table != NULL, ERR_NULL_PTR);
 
+    for (size_t i = 0; i < table->size; i++)
+        free(table->names[i]);
+
     free(table->names);
     table->capacity = 0;
     table->size = 0;
@@ -286,3 +289,185 @@ errors TreeVerify(const Node_t* root, const VarTable* vars) {
     return NodeVerify(root, vars, &visited);
 }
 
+//----------------------------------------------- DIFFERENTIATION -----------------------------------
+
+Node_t* CopyNode(const Node_t* ctrl_c, Node_t* parent) {
+    if (!ctrl_c) return NULL;
+
+    Node_t* ctrl_v = (Node_t*)calloc(1, sizeof(Node_t));
+    my_assert(ctrl_v, NULL);
+
+    ctrl_v->val.index = ctrl_c->val.index;
+    ctrl_v->val.num = ctrl_c->val.num;
+    ctrl_v->val.op = ctrl_c->val.op;
+    ctrl_v->val.type = ctrl_c->val.type;
+
+    ctrl_v->parent = parent;
+
+    ctrl_v->left_son = CopyNode(ctrl_c->left_son, ctrl_v);
+    ctrl_v->right_son = CopyNode(ctrl_c->right_son, ctrl_v);
+
+    return ctrl_v;
+}
+
+
+Node_t* Diff(const Node_t* dNode, ssize_t var_idx) {
+
+    un_val value = {};
+
+
+    switch(dNode->val.type) {
+
+        case NUM:
+            value.type = NUM;
+            value.num = 0;
+            return NewNode(value, NULL, NULL);
+
+        case VAR:
+
+            if (dNode->val.index == var_idx) 
+                return _1;
+            else
+                return _0;
+            
+        case OP:
+
+            switch(dNode->val.op) {
+
+                case ADD:
+                    return _ADD(_DL(dNode, var_idx), _DR(dNode, var_idx));
+
+                case SUB:
+                    return _SUB(_DL(dNode, var_idx), _DR(dNode, var_idx));
+
+                case MUL:
+                    return _ADD(_MUL(_DL(dNode, var_idx), _CR(dNode)), _MUL(_CL(dNode), _DR(dNode, var_idx)));
+
+                case DIV:
+                    return _DIV(_SUB(_MUL(_DL(dNode, var_idx), _CR(dNode)), _MUL(_DR(dNode, var_idx), _CL(dNode))),
+                             _MUL(_CR(dNode), _CR(dNode)));
+
+                case POWER:
+                    return PowerDiff(dNode, var_idx);
+
+                case SQRT:
+                    return FuncDiff(dNode, _DIV(_1, _MUL(_NUM(2), NewOp(SQRT, _CL(dNode), NULL))), var_idx);
+
+                case LOG:
+                    return FuncDiff(dNode, _DIV(_1, _MUL(_CR(dNode), NewOp(LN, _CL(dNode), NULL))), var_idx);
+
+                case LN:
+                    if(dNode->left_son) return FuncDiff(dNode, _DIV(_1, _CL(dNode)), var_idx);
+                    return FuncDiff(dNode, _DIV(_1, _CR(dNode)), var_idx);
+
+                case SIN:
+                    return FuncDiff(dNode, _FUNC(COS, dNode, var_idx), var_idx);
+
+                case COS:
+                    return FuncDiff(dNode, _MUL(_NUM(-1), _FUNC(SIN, dNode, var_idx)), var_idx);
+
+                case TG:
+                    return FuncDiff(dNode, _DIV(_1, NewOp(POWER, _FUNC(COS, dNode, var_idx), _NUM(2))), var_idx);
+
+                case CTG:
+                    return FuncDiff(dNode, _DIV(_NUM(-1), NewOp(POWER, _FUNC(SIN, dNode, var_idx), _NUM(2))), var_idx);
+
+                case ARCSIN:
+                    return FuncDiff(dNode, _DIV(_1, NewOp(SQRT, _SUB(_1, NewOp(POWER, _CL(dNode), _NUM(2))), NULL)), var_idx);
+
+                case ARCCOS:
+                    return FuncDiff(dNode, _DIV(_NUM(-1), NewOp(SQRT, _SUB(_1, NewOp(POWER, _CL(dNode), _NUM(2))), NULL)), var_idx);
+
+                case ARCTG:
+                    return FuncDiff(dNode, _DIV(_1, _ADD(_1, NewOp(POWER, _CL(dNode), _NUM(2)))), var_idx);
+
+                case ARCCTG:
+                    return FuncDiff(dNode, _DIV(_NUM(-1), _ADD(_1, NewOp(POWER, _CL(dNode), _NUM(2)))), var_idx);
+
+                case SH:
+                    return FuncDiff(dNode, _FUNC(CH, dNode, var_idx), var_idx);
+
+                case CH:
+                    return FuncDiff(dNode, _FUNC(SH, dNode, var_idx), var_idx);
+
+                case TH:
+                    return FuncDiff(dNode, _DIV(_1, NewOp(POWER, _FUNC(CH, dNode, var_idx), _NUM(2))), var_idx);
+
+                case CTH:
+                    return FuncDiff(dNode, _DIV(_NUM(-1), NewOp(POWER, _FUNC(SH, dNode, var_idx), _NUM(2))), var_idx);
+                
+                case ARCSH:
+                    return FuncDiff(dNode, _DIV(_1, NewOp(SQRT, _ADD(_1, NewOp(POWER, _CL(dNode), _NUM(2))), NULL)), var_idx);
+
+                case ARCCH:
+                    return FuncDiff(dNode, _DIV(_1, NewOp(SQRT, _SUB(NewOp(POWER, _CL(dNode), _NUM(2)), _1), NULL)), var_idx);
+
+                case ARCTH:
+                case ARCCTH:
+                    return FuncDiff(dNode, _DIV(_1, _SUB(_1, NewOp(POWER, _CL(dNode), _NUM(2)))), var_idx);
+
+                default:
+                    printf(RED "I can't count this derivative yet\n" RESET);
+                    break;
+            }
+        break;
+
+        default:
+            printf(RED "Unknown type of node\n" RESET);
+            break;
+    }   
+    return NULL;
+}
+
+Node_t* FuncDiff(const Node_t* dNode, Node_t* derivative, ssize_t var_idx) {
+    my_assert(dNode, NULL);
+
+    bool in_x_l = is_var_in_branch(dNode->left_son, var_idx);
+    bool in_x_r = is_var_in_branch(dNode->right_son, var_idx);
+
+    if (in_x_l)
+        return _MUL(derivative, _DL(dNode, var_idx));
+    else if (in_x_r)
+        return _MUL(derivative, _DR(dNode, var_idx));
+
+    DestroyBranch(derivative);
+    return _0;
+}
+
+
+
+Node_t* PowerDiff(const Node_t* dNode, ssize_t var_idx) {
+    my_assert(dNode, NULL);
+
+    bool var_in_left = is_var_in_branch(dNode->left_son, var_idx);
+    bool var_in_right = is_var_in_branch(dNode->right_son, var_idx);
+
+    if (var_in_left && var_in_right) {
+        return _MUL(NewOp(POWER, _CL(dNode), _CR(dNode)), 
+        _ADD(_MUL(_DR(dNode, var_idx), NewOp(LN, _CL(dNode), NULL)), 
+        _MUL(_CR(dNode), _DIV(_DL(dNode, var_idx), _CL(dNode)))));
+
+    } else if (var_in_left) {
+        return _MUL(_MUL(_CR(dNode), NewOp(POWER, _CL(dNode), _SUB(_CR(dNode), _1))), _DL(dNode, var_idx));
+
+    } else if (var_in_right) {
+        return _MUL(_MUL(CopyNode(dNode, NULL), _DR(dNode, var_idx)), NewOp(LN, _CL(dNode), NULL));
+
+    } else {
+        return _0;
+    }
+
+}
+
+bool is_var_in_branch(const Node_t* node, ssize_t var_idx) {
+    if (!node) return false;
+    
+    if (node->val.type == VAR && node->val.index == var_idx)
+        return true;
+    
+    bool in_left = is_var_in_branch(node->left_son, var_idx);
+    if (in_left)
+        return in_left;
+    
+    return is_var_in_branch(node->right_son, var_idx);   
+}

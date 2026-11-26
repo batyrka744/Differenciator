@@ -48,6 +48,14 @@ ON_DEBUG(\
 #define _MUL(L, R) NewOp(MUL, L, R)
 #define _DIV(L, R) NewOp(DIV, L, R)
 
+#define _DL(diffed, var_idx) Diff(diffed->left_son, var_idx)
+#define _DR(diffed, var_idx) Diff(diffed->right_son, var_idx)
+
+#define _CL(diffed) CopyNode(diffed->left_son, NULL)
+#define _CR(diffed) CopyNode(diffed->right_son, NULL)
+
+#define _FUNC(op, node, var_idx) (node->left_son) ? NewOp(op, node->left_son, NULL) : NewOp(op, NULL, node->right_son)
+
 #define LOG_FILE "Dump_files\\log.txt"
 #define LOG_GRAPH "Dump_files\\graph_log.html"
 #define TEX_FILE "Dump_files\\tex_dump.tex"
@@ -213,3 +221,7 @@ const char* ErrCode(errors err);
 ssize_t find_op_by_type(op_type type);
 
 ssize_t find_op_by_name(const char* name);
+
+Node_t* CopyNode(Node_t* ctrl_c, Node_t* parent);
+
+bool is_var_in_branch(const Node_t* node, ssize_t var_idx);
