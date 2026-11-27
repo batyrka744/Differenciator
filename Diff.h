@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 
 //------------------------------------------------------ MACROSES -----------------------------------------------
 
@@ -34,6 +35,7 @@ ON_DEBUG(\
     } while(0)\
 )
 
+#define LEN 256
 
 //-------------------- DSL -------------------
 

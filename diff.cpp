@@ -237,6 +237,60 @@ errors DestroyBranch(Node_t* node) {
     return err;
 }
 
+//--------------------------------------------- READ FROM FILE ---------------------------------------
+
+Node_t* ReadPrefix(VarTable* vars, FILE* file) {
+    my_assert(vars, NULL);
+    my_assert(file, NULL);
+
+    int ch = 0;
+
+    while (isspace(ch = fgetc(file)));
+    if (ch == EOF) return NULL;
+
+    if (ch == '(') {
+        char buffer[LEN] = "";
+        fscanf(file, " %255[^ \t\n\r()]", buffer);
+
+        if (strcmp(buffer, "nil") == 0) {
+            while (isspace(ch = fgetc(file)));
+            return NULL;
+        }
+            
+
+        char* end_num = NULL;
+        double num = strtod(buffer, &end_num);
+        if (*end_num == '\0' && end_num != buffer) {
+            while (isspace(ch = fgetc(file)));
+            if (ch == EOF) return NULL;
+
+            return _NUM(num);
+        }
+
+        ssize_t idx = find_op_by_name(buffer);
+        if (idx != -1) {
+
+            Node_t* left = ReadPrefix(vars, file);
+            Node_t* right = ReadPrefix(vars, file);
+
+            while (isspace(ch = fgetc(file)));
+            if (ch == EOF) return NULL;
+
+            return NewOp(OP_TABLE[idx].type, left, right);
+        } 
+        while (isspace(ch = fgetc(file)));
+        if (ch == EOF) return NULL;
+        return _VAR(buffer, vars);
+            
+    } else if (ch == 'n') {
+        fgetc(file); 
+        fgetc(file);
+        return NULL;
+    }
+    return NULL;
+}
+
+
 //------------------------------------------------- VERIFY --------------------------------------------
 
 errors NodeVerify(const Node_t* node, const VarTable* vars, size_t* visited) {
