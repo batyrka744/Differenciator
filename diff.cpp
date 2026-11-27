@@ -8,17 +8,22 @@ int main() {
     VarTable vars = {0};
     VarTableInit(&vars, 10);
 
-    Node_t* node = NewOp(POWER, _VAR("x", &vars), _VAR("x", &vars));
+    //Node_t* node = NewOp(POWER, _VAR("x", &vars), _VAR("x", &vars));
     
+    Node_t* node = ReadPrefix(&vars, file_read);
+    Node_t* diffed_node = Diff(node, 0);
+    TexDumpStart(diffed_node, &vars);
 
-    TexDumpStart(node, &vars);
-    DiffDump_file(node, &vars, ERR_OK, LOG_GRAPH, __LINE__, __func__);
-
-    Node_t* diff_node = Diff(node, 0);
-    TexDumpStart(diff_node, &vars);
-
-    DestroyBranch(diff_node);
     DestroyBranch(node);
+
+    //TexDumpStart(node, &vars);
+    //DiffDump_file(node, &vars, ERR_OK, LOG_GRAPH, __LINE__, __func__);
+
+    //Node_t* diff_node = Diff(node, 0);
+    //TexDumpStart(diff_node, &vars);
+
+    //DestroyBranch(diff_node);
+    //DestroyBranch(node);
 
     VarTableDtor(&vars);
     fclose(file_read);

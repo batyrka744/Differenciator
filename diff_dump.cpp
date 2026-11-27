@@ -185,7 +185,8 @@ void TexDumpStart(Node_t* root, VarTable* vars) {
 }
 
 void TexPrintNode(const Node_t* node, VarTable* vars, FILE* file) {
-    my_assert(vars,);
+    ASSERT_OK(dNode, vars);
+
     my_assert(file,);
     if (!node) return;
 

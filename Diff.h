@@ -233,3 +233,5 @@ Node_t* Diff(const Node_t* dNode, ssize_t var_idx);
 Node_t* FuncDiff(const Node_t* dNode, Node_t* derivative, ssize_t var_idx);
 
 Node_t* PowerDiff(const Node_t* dNode, ssize_t var_idx);
+
+Node_t* ReadPrefix(VarTable* vars, FILE* file);
